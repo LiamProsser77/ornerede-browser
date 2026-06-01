@@ -25,6 +25,9 @@ A fast, modern, privacy-first browser built for global search, speed, and clean 
 </div>
 
 ---
+# What is Knarr browser?
+
+Knarr browser is a Privacy based browser that blocks ads, and has 3 kinds of work environments such as personal, work, and for devs. Knarr also is a proxy based browser that bypasses ads and if the page is not working right you can just click "Force" and the page will work for you. Knarr also has extensions too such as Knarr Dictionary, Calculator, Heofonix AI, Heotranslate. Knarr also last but not least, blocks ads and cookies that you do not need so the page loads faster.
 
 # Downloads
 
@@ -32,6 +35,9 @@ Download the latest version from the Releases page.
 
 ## Windows
 - `Knarr Setup.exe`
+
+## Chrome OS
+To download Knarr browser on Chrome OS you have to go to https://knarr.zite.so/browser and go to the 3 dots in the corner and go down and hover over cast, save, and share and click install page and your good to go for Knarr browser on Chrome OS. (Instructions based on Chrome Browser)
 
 ## macOS
 - `Knarr.dmg`
