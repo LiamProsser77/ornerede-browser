@@ -52,9 +52,13 @@ To download Knarr browser on Chrome OS you have to go to https://knarr.zite.so/b
 - Modern UI
 - Privacy-focused
 - Fast performance
-- Global search
+- Heofon Search
 - Cross-platform
 - Open source
+- Extensions
+- Force button
+- Blocks ads
+- Heofonix AI
 
 ---
 
