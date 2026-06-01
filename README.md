@@ -19,6 +19,7 @@ A fast, modern, privacy-first browser built for global search, speed, and clean 
 ![Windows](https://img.shields.io/badge/Windows-Supported-purple)
 ![macOS](https://img.shields.io/badge/macOS-Supported-purple)
 ![Linux](https://img.shields.io/badge/Linux-Supported-purple)
+![Chrome OS](https://img.shields.io/badge/ChromeOS-Supported-purple)
 ![Fast](https://img.shields.io/badge/Speed-Fast-orange)
 ![Open Source](https://img.shields.io/badge/Open%20Source-Yes-red)
 
