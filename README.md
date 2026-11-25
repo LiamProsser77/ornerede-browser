@@ -6,7 +6,6 @@ It is designed to be installed and launched through terminal commands.
 
 ## Features
 
-- Mozilla Gecko rendering engine
 - C++ application
 - Terminal-based installation
 - Cross-platform goals
@@ -17,6 +16,9 @@ It is designed to be installed and launched through terminal commands.
 - Android (Termux)
 - Windows
 - macOS
+
+## Engine
+Ornerede runs on Mozilla Gecko
 
 ## Building
 
