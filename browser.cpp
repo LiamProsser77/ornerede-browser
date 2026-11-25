@@ -13,6 +13,7 @@
 #include <QInputDialog>
 #include <QAction>
 #include <QTextDocument>
+#include <QImage>
 
 OrneredeBrowser::OrneredeBrowser(QWidget *parent)
     : QMainWindow(parent) {
@@ -24,7 +25,6 @@ OrneredeBrowser::OrneredeBrowser(QWidget *parent)
 
     QWidget *central = new QWidget(this);
     QVBoxLayout *layout = new QVBoxLayout(central);
-
     QHBoxLayout *navigation = new QHBoxLayout();
 
     QPushButton *back = new QPushButton("<");
@@ -52,21 +52,19 @@ OrneredeBrowser::OrneredeBrowser(QWidget *parent)
     setCentralWidget(central);
 
     bookmarksMenu = menuBar()->addMenu("Bookmarks");
-
     bookmarksMenu->addAction(
         "Add Bookmark",
         this,
         &OrneredeBrowser::addBookmark
     );
-
     bookmarksMenu->addSeparator();
+
     updateBookmarksMenu();
 
     connect(back, &QPushButton::clicked, this, [this]() {
         auto *viewer = qobject_cast<QTextBrowser *>(
             tabs->currentWidget()
         );
-
         if (viewer)
             viewer->backward();
     });
@@ -75,7 +73,6 @@ OrneredeBrowser::OrneredeBrowser(QWidget *parent)
         auto *viewer = qobject_cast<QTextBrowser *>(
             tabs->currentWidget()
         );
-
         if (viewer)
             viewer->forward();
     });
@@ -121,7 +118,7 @@ OrneredeBrowser::OrneredeBrowser(QWidget *parent)
 }
 
 
-// New tab
+// Create new tab
 void OrneredeBrowser::addNewTab() {
 
     auto *viewer = new QTextBrowser();
@@ -142,13 +139,13 @@ void OrneredeBrowser::addNewTab() {
         "<p>Enter a website address above to begin.</p>"
         "</body></html>";
 
-    viewer->setHtml(html);
     viewer->document()->addResource(
         QTextDocument::ImageResource,
         QUrl("Ornerede.png"),
         QImage("Ornerede.png")
     );
 
+    viewer->setHtml(html);
     viewer->setProperty("pageUrl", "");
 
     connect(viewer, &QTextBrowser::anchorClicked,
@@ -163,7 +160,7 @@ void OrneredeBrowser::addNewTab() {
 }
 
 
-// Navigate
+// Navigate to address
 void OrneredeBrowser::navigateToAddress() {
 
     QString address = addressBar->text().trimmed();
@@ -189,7 +186,7 @@ void OrneredeBrowser::navigateToAddress() {
 }
 
 
-// Load through local proxy
+// Load page through local proxy
 void OrneredeBrowser::loadPage(const QUrl &url) {
 
     auto *viewer = qobject_cast<QTextBrowser *>(
@@ -211,9 +208,7 @@ void OrneredeBrowser::loadPage(const QUrl &url) {
 
     connect(reply, &QNetworkReply::finished,
             this, [this, reply, url, viewer]() {
-
-        displayPage(reply, url);
-
+        displayPage(reply, url, viewer);
         reply->deleteLater();
     });
 
@@ -225,17 +220,9 @@ void OrneredeBrowser::loadPage(const QUrl &url) {
 // Display loaded page
 void OrneredeBrowser::displayPage(
     QNetworkReply *reply,
-    const QUrl &url
+    const QUrl &url,
+    QTextBrowser *viewer
 ) {
-
-    auto *viewer = qobject_cast<QTextBrowser *>(
-        reply->property("viewer").value<QWidget *>()
-    );
-
-    if (!viewer)
-        viewer = qobject_cast<QTextBrowser *>(
-            tabs->currentWidget()
-        );
 
     if (!viewer)
         return;
@@ -340,6 +327,7 @@ void OrneredeBrowser::updateBookmarksMenu() {
 
 // Open bookmark
 void OrneredeBrowser::openBookmark(const QString &url) {
+
     addressBar->setText(url);
     navigateToAddress();
 }
