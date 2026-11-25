@@ -6,7 +6,6 @@
 #include <QLineEdit>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
-#include <QNetworkProxy>
 #include <QTextBrowser>
 #include <QUrl>
 
@@ -21,15 +20,14 @@ private:
     QLineEdit *addressBar;
     QNetworkAccessManager *networkManager;
 
-    QString proxyHost = "127.0.0.1";
-    quint16 proxyPort = 8080;
-
-    void configureProxy();
-
     void addNewTab();
     void navigateToAddress();
     void loadPage(const QUrl &url);
-    void displayPage(QNetworkReply *reply);
+
+    void displayPage(
+        QNetworkReply *reply,
+        const QUrl &originalUrl
+    );
 
     void goBack();
     void goForward();
