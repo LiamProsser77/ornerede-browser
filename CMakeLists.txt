@@ -16,6 +16,10 @@ add_executable(ornerede
     main.cpp
     browser.cpp
     browser.h
+    proxy.cpp
+    proxy.h
+    privacy.cpp
+    privacy.h
 )
 
 target_link_libraries(ornerede PRIVATE
