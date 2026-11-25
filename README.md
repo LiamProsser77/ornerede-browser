@@ -23,6 +23,18 @@ It is designed to be installed and launched through terminal commands.
 - Windows
 - macOS
 
+
+## Install Ornerede
+
+[![Linux](https://img.shields.io/badge/Install-Linux-orange?style=for-the-badge&logo=linux)](https://github.com/LiamProsser77/ornerede-browser/releases/latest)
+
+[![Windows](https://img.shields.io/badge/Install-Windows-blue?style=for-the-badge&logo=windows)](https://github.com/LiamProsser77/ornerede-browser/releases/latest)
+
+[![macOS](https://img.shields.io/badge/Install-macOS-black?style=for-the-badge&logo=apple)](https://github.com/LiamProsser77/ornerede-browser/releases/latest)
+
+[![ChromeOS](https://img.shields.io/badge/Install-ChromeOS-green?style=for-the-badge&logo=googlechrome)](https://github.com/LiamProsser77/ornerede-browser/releases/latest)
+
+
 ## Engine
 Ornerede has no engine it runs on it's own code, which makes it lightweight and easy to run.
 
