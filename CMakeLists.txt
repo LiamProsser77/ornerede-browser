@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(OrneredeBrowser VERSION 0.1.0 LANGUAGES CXX)
+project(OrneredeBrowser VERSION 0.0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -18,11 +18,16 @@ add_executable(ornerede
     browser.h
     proxy.cpp
     proxy.h
-    privacy.cpp
-    privacy.h
 )
 
 target_link_libraries(ornerede PRIVATE
     Qt6::Widgets
     Qt6::Network
+)
+
+# Copy the browser logo into the build directory
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/Ornerede.png"
+    "${CMAKE_CURRENT_BINARY_DIR}/Ornerede.png"
+    COPYONLY
 )
