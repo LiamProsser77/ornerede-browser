@@ -4,16 +4,29 @@ cmake-build-*/
 
 # Compiled files
 *.o
+*.obj
 *.a
 *.so
 *.dll
 *.exe
 *.dylib
 
+# Qt generated files
+moc_*.cpp
+ui_*.h
+qrc_*.cpp
+
+# CMake files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
 # IDE files
 .vscode/
 .idea/
+*.user
 
-# System files
+# Operating system files
 .DS_Store
 Thumbs.db
