@@ -2,20 +2,33 @@
 
 set -e
 
-echo "Installing Ornerede Browser..."
+echo "================================"
+echo "       Ornerede Browser"
+echo "================================"
+
+echo "Checking dependencies..."
 
 if ! command -v cmake >/dev/null 2>&1; then
-    echo "Error: CMake is not installed."
+    echo "CMake is required."
     exit 1
 fi
 
 if ! command -v c++ >/dev/null 2>&1; then
-    echo "Error: C++ compiler is not installed."
+    echo "A C++ compiler is required."
     exit 1
 fi
 
-cmake -S . -B build
-cmake --build build
+echo "Configuring project..."
 
-echo "Ornerede has been built successfully."
-echo "Run it with: ./build/ornerede"
+cmake -S . -B build
+
+echo "Building Ornerede..."
+
+cmake --build build --parallel
+
+echo "================================"
+echo "Build completed!"
+echo "================================"
+
+echo "Run Ornerede with:"
+echo "./build/ornerede"
