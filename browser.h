@@ -5,6 +5,7 @@
 #include <QTabWidget>
 #include <QLineEdit>
 #include <QNetworkAccessManager>
+#include <QNetworkReply>
 #include <QTextBrowser>
 #include <QUrl>
 #include <QMenu>
@@ -24,7 +25,13 @@ private:
     void addNewTab();
     void navigateToAddress();
     void loadPage(const QUrl &url);
-    void displayPage(QNetworkReply *reply, const QUrl &url);
+
+    void displayPage(
+        QNetworkReply *reply,
+        const QUrl &url,
+        QTextBrowser *viewer
+    );
+
     void addBookmark();
     void updateBookmarksMenu();
     void openBookmark(const QString &url);
