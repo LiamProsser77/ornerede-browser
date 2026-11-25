@@ -19,7 +19,8 @@ int main(int argc, char *argv[]) {
         QMessageBox::critical(
             nullptr,
             "Proxy Error",
-            "Ornerede could not start its local proxy."
+            "Ornerede could not start its local proxy.\n\n"
+            "Port 8080 may already be in use."
         );
 
         return 1;
