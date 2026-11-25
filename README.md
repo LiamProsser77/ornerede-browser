@@ -42,6 +42,8 @@ It is designed to be installed and launched through terminal commands.
 
 [Open Ornerede for ChromeOS](https://liamprosser77.github.io/ornerede-web/)
 
+**Note: Ornerede is at it's first release right now each webpage does not show Javascript yet, only HTML.**
+
 ## Engine
 Ornerede has no engine it runs on it's own code, which makes it lightweight and easy to run.
 
