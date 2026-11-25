@@ -2,15 +2,18 @@
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QPushButton>
 #include <QLabel>
 #include <QWidget>
+#include <QUrl>
+#include <QMessageBox>
 
 OrneredeBrowser::OrneredeBrowser(QWidget *parent)
     : QMainWindow(parent) {
 
     setWindowTitle("Ornerede Browser");
     resize(1200, 800);
+
+    networkManager = new QNetworkAccessManager(this);
 
     QWidget *central = new QWidget(this);
     QVBoxLayout *mainLayout = new QVBoxLayout(central);
@@ -25,7 +28,7 @@ OrneredeBrowser::OrneredeBrowser(QWidget *parent)
     QPushButton *newTabButton = new QPushButton("+");
 
     addressBar = new QLineEdit();
-    addressBar->setPlaceholderText("Search or enter address...");
+    addressBar->setPlaceholderText("Enter website address...");
 
     navigation->addWidget(backButton);
     navigation->addWidget(forwardButton);
@@ -70,33 +73,46 @@ OrneredeBrowser::OrneredeBrowser(QWidget *parent)
         }
     });
 
+    connect(tabs, &QTabWidget::currentChanged,
+            this, [this](int index) {
+        if (index < 0)
+            return;
+
+        QTextBrowser *viewer =
+            qobject_cast<QTextBrowser *>(tabs->widget(index));
+
+        if (viewer)
+            addressBar->setText(
+                viewer->property("pageUrl").toString()
+            );
+    });
+
     addNewTab();
 }
 
+// Create a new tab
 void OrneredeBrowser::addNewTab() {
-    QWidget *page = new QWidget();
-    QVBoxLayout *layout = new QVBoxLayout(page);
 
-    QLabel *content = new QLabel(
-        "Ornerede Browser\n\n"
-        "Powered by Mozilla Gecko\n"
-        "Welcome to Ornerede."
+    QTextBrowser *viewer = new QTextBrowser();
+
+    viewer->setOpenExternalLinks(false);
+    viewer->setHtml(
+        "<h1>Ornerede Browser</h1>"
+        "<p>Welcome to Ornerede.</p>"
+        "<p>Enter a website address to begin.</p>"
     );
 
-    content->setObjectName("pageContent");
-    content->setAlignment(Qt::AlignCenter);
+    viewer->setProperty("pageUrl", "");
 
-    layout->addStretch();
-    layout->addWidget(content);
-    layout->addStretch();
-
-    int index = tabs->addTab(page, "New Tab");
+    int index = tabs->addTab(viewer, "New Tab");
     tabs->setCurrentIndex(index);
 
     addressBar->clear();
 }
 
+// Navigate to an address
 void OrneredeBrowser::navigateToAddress() {
+
     QString address = addressBar->text().trimmed();
 
     if (address.isEmpty())
@@ -106,60 +122,125 @@ void OrneredeBrowser::navigateToAddress() {
         address = "https://" + address;
     }
 
-    QWidget *page = tabs->currentWidget();
+    QUrl url(address);
 
-    if (page) {
-        QLabel *content = page->findChild<QLabel *>("pageContent");
+    if (!url.isValid() || url.host().isEmpty()) {
+        QMessageBox::warning(
+            this,
+            "Invalid address",
+            "Please enter a valid website address."
+        );
+        return;
+    }
 
-        if (content) {
-            content->setText(
-                "Requested address:\n" + address +
-                "\n\nGecko rendering is not connected yet."
+    loadPage(url);
+}
+
+// Request a webpage
+void OrneredeBrowser::loadPage(const QUrl &url) {
+
+    QNetworkRequest request(url);
+
+    request.setHeader(
+        QNetworkRequest::UserAgentHeader,
+        "OrneredeBrowser/0.1"
+    );
+
+    QNetworkReply *reply = networkManager->get(request);
+
+    connect(reply, &QNetworkReply::finished,
+            this, [this, reply]() {
+        displayPage(reply);
+    });
+}
+
+// Display returned webpage content
+void OrneredeBrowser::displayPage(QNetworkReply *reply) {
+
+    if (reply->error() != QNetworkReply::NoError) {
+
+        QString error = reply->errorString();
+
+        if (auto *viewer =
+                qobject_cast<QTextBrowser *>(tabs->currentWidget())) {
+            viewer->setPlainText(
+                "Unable to load this page.\n\n" + error
             );
         }
+
+        reply->deleteLater();
+        return;
     }
 
-    addressBar->setText(address);
+    QByteArray content = reply->readAll();
+
+    QString html = QString::fromUtf8(content);
+
+    QTextBrowser *viewer =
+        qobject_cast<QTextBrowser *>(tabs->currentWidget());
+
+    if (viewer) {
+
+        viewer->setHtml(html);
+
+        viewer->setProperty(
+            "pageUrl",
+            reply->url().toString()
+        );
+
+        tabs->setTabText(
+            tabs->currentIndex(),
+            reply->url().host()
+        );
+
+        addressBar->setText(
+            reply->url().toString()
+        );
+    }
+
+    reply->deleteLater();
 }
 
+// Back navigation
 void OrneredeBrowser::goBack() {
-    QWidget *page = tabs->currentWidget();
 
-    if (page) {
-        QLabel *content = page->findChild<QLabel *>("pageContent");
-        if (content)
-            content->setText("Back navigation will use Gecko.");
-    }
+    QTextBrowser *viewer =
+        qobject_cast<QTextBrowser *>(tabs->currentWidget());
+
+    if (viewer)
+        viewer->backward();
 }
 
+// Forward navigation
 void OrneredeBrowser::goForward() {
-    QWidget *page = tabs->currentWidget();
 
-    if (page) {
-        QLabel *content = page->findChild<QLabel *>("pageContent");
-        if (content)
-            content->setText("Forward navigation will use Gecko.");
-    }
+    QTextBrowser *viewer =
+        qobject_cast<QTextBrowser *>(tabs->currentWidget());
+
+    if (viewer)
+        viewer->forward();
 }
 
+// Refresh current page
 void OrneredeBrowser::refreshPage() {
-    QWidget *page = tabs->currentWidget();
 
-    if (page) {
-        QLabel *content = page->findChild<QLabel *>("pageContent");
-        if (content)
-            content->setText("Refresh will use Gecko.");
-    }
+    navigateToAddress();
 }
 
+// Home page
 void OrneredeBrowser::goHome() {
-    addressBar->clear();
 
-    QWidget *page = tabs->currentWidget();
+    QTextBrowser *viewer =
+        qobject_cast<QTextBrowser *>(tabs->currentWidget());
 
-    if (page) {
-        QLabel *content = page->findChild<QLabel *>("pageContent");
-        if (content)
-            content->setText("Ornerede Browser\n\nWelcome home.");
+    if (viewer) {
+        viewer->setHtml(
+            "<h1>Ornerede Browser</h1>"
+            "<p>Welcome home.</p>"
+        );
+
+        viewer->setProperty("pageUrl", "");
     }
+
+    addressBar->clear();
 }
