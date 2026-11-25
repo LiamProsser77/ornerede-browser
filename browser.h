@@ -4,10 +4,11 @@
 #include <QMainWindow>
 #include <QTabWidget>
 #include <QLineEdit>
-#include <QPushButton>
-#include <QTextBrowser>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
+#include <QNetworkProxy>
+#include <QTextBrowser>
+#include <QUrl>
 
 class OrneredeBrowser : public QMainWindow {
     Q_OBJECT
@@ -19,6 +20,11 @@ private:
     QTabWidget *tabs;
     QLineEdit *addressBar;
     QNetworkAccessManager *networkManager;
+
+    QString proxyHost = "127.0.0.1";
+    quint16 proxyPort = 8080;
+
+    void configureProxy();
 
     void addNewTab();
     void navigateToAddress();
