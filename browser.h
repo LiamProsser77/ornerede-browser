@@ -5,9 +5,9 @@
 #include <QTabWidget>
 #include <QLineEdit>
 #include <QNetworkAccessManager>
-#include <QNetworkReply>
 #include <QTextBrowser>
 #include <QUrl>
+#include <QMenu>
 
 class OrneredeBrowser : public QMainWindow {
     Q_OBJECT
@@ -19,20 +19,15 @@ private:
     QTabWidget *tabs;
     QLineEdit *addressBar;
     QNetworkAccessManager *networkManager;
+    QMenu *bookmarksMenu;
 
     void addNewTab();
     void navigateToAddress();
     void loadPage(const QUrl &url);
-
-    void displayPage(
-        QNetworkReply *reply,
-        const QUrl &originalUrl
-    );
-
-    void goBack();
-    void goForward();
-    void refreshPage();
-    void goHome();
+    void displayPage(QNetworkReply *reply, const QUrl &url);
+    void addBookmark();
+    void updateBookmarksMenu();
+    void openBookmark(const QString &url);
 };
 
 #endif
