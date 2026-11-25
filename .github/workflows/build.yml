@@ -7,9 +7,6 @@ on:
 
 jobs:
   build:
-    name: Build for ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-
     strategy:
       matrix:
         include:
@@ -20,6 +17,8 @@ jobs:
           - os: macos-latest
             name: macos
 
+    runs-on: ${{ matrix.os }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,7 +27,7 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: '6.8.3'
-          modules: 'qtbase'
+          modules: qtbase
 
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -36,12 +35,23 @@ jobs:
       - name: Build
         run: cmake --build build --config Release
 
-      - name: Upload build
+      - name: Package Linux
+        if: runner.os == 'Linux'
+        run: tar -czf ornerede-linux.tar.gz -C build ornerede
+
+      - name: Package Windows
+        if: runner.os == 'Windows'
+        run: Compress-Archive -Path build/Release/ornerede.exe -DestinationPath ornerede-windows.zip
+
+      - name: Package macOS
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p package
+          cp build/ornerede package/
+          tar -czf ornerede-macos.tar.gz -C package .
+
+      - name: Upload package
         uses: actions/upload-artifact@v4
         with:
           name: ornerede-${{ matrix.name }}
-          path: |
-            build/ornerede
-            build/Release/ornerede.exe
-            build/ornerede.app
-          if-no-files-found: ignore
+          path: ornerede-*
