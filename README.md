@@ -1,3 +1,9 @@
+<img width="144" height="150" align="left" alt="logo_clean_transparent" src="https://github.com/user-attachments/assets/4d5ad552-040b-4198-803c-5beca7e7d130" />
+<br><br><br><br><br>
+<sub>Logo hand drawn by Liam Prosser</sub>
+
+<br clear="left" />
+
 # Ornerede Browser
 
 Ornerede is an open-source web browser that's private and built with C++.
