@@ -26,14 +26,21 @@ It is designed to be installed and launched through terminal commands.
 
 ## Install Ornerede
 
-[![Linux](https://img.shields.io/badge/Install-Linux-orange?style=for-the-badge&logo=linux)](https://github.com/LiamProsser77/ornerede-browser/releases/latest)
+## Linux
 
-[![Windows](https://img.shields.io/badge/Install-Windows-blue?style=for-the-badge&logo=windows)](https://github.com/LiamProsser77/ornerede-browser/releases/latest)
+[![Download Ornerede for Linux](https://img.shields.io/badge/Download-Ornerede_Linux-orange?style=for-the-badge&logo=linux&logoColor=white)](https://github.com/LiamProsser77/ornerede-browser/releases/latest)
 
-[![macOS](https://img.shields.io/badge/Install-macOS-black?style=for-the-badge&logo=apple)](https://github.com/LiamProsser77/ornerede-browser/releases/latest)
+## Windows
 
-[![ChromeOS](https://img.shields.io/badge/Install-ChromeOS-green?style=for-the-badge&logo=googlechrome)](https://github.com/LiamProsser77/ornerede-browser/releases/latest)
+[![Download Ornerede for Windows](https://img.shields.io/badge/Download-Ornerede_Windows-blue?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/LiamProsser77/ornerede-browser/releases/latest)
 
+## macOS
+
+[![Download Ornerede for macOS](https://img.shields.io/badge/Download-Ornerede_macOS-black?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/LiamProsser77/ornerede-browser/releases/latest)
+
+## ChromeOS
+
+[Open Ornerede for ChromeOS](https://liamprosser77.github.io/ornerede-web/)
 
 ## Engine
 Ornerede has no engine it runs on it's own code, which makes it lightweight and easy to run.
