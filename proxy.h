@@ -6,6 +6,7 @@
 #include <QTcpSocket>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
+#include <QHash>
 
 class ProxyServer : public QObject {
     Q_OBJECT
@@ -20,8 +21,16 @@ private:
     QTcpServer *server;
     QNetworkAccessManager *networkManager;
 
+    QHash<QTcpSocket *, QByteArray> buffers;
+
     void handleConnection();
     void handleRequest(QTcpSocket *socket);
+
+    void sendError(
+        QTcpSocket *socket,
+        int status,
+        const QByteArray &reason
+    );
 };
 
 #endif
