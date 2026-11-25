@@ -6,114 +6,140 @@
 #include <QWidget>
 #include <QMessageBox>
 #include <QNetworkRequest>
+#include <QNetworkReply>
 #include <QUrlQuery>
-#include <QTextBrowser>
+#include <QSettings>
+#include <QFile>
+#include <QTextStream>
+#include <QLabel>
+#include <QPixmap>
+#include <QDesktopServices>
+#include <QMenuBar>
+#include <QInputDialog>
 
 OrneredeBrowser::OrneredeBrowser(QWidget *parent)
     : QMainWindow(parent) {
 
-    setWindowTitle("Ornerede Browser");
+    setWindowTitle("Ornerede");
     resize(1100, 750);
 
     networkManager = new QNetworkAccessManager(this);
 
     QWidget *central = new QWidget(this);
-    QVBoxLayout *mainLayout = new QVBoxLayout(central);
+    QVBoxLayout *layout = new QVBoxLayout(central);
 
-    // Navigation bar
     QHBoxLayout *navigation = new QHBoxLayout();
 
-    QPushButton *backButton = new QPushButton("<");
-    QPushButton *forwardButton = new QPushButton(">");
-    QPushButton *refreshButton = new QPushButton("Refresh");
-    QPushButton *homeButton = new QPushButton("Home");
-    QPushButton *newTabButton = new QPushButton("+");
+    QPushButton *back = new QPushButton("<");
+    QPushButton *forward = new QPushButton(">");
+    QPushButton *refresh = new QPushButton("Refresh");
+    QPushButton *home = new QPushButton("Home");
+    QPushButton *newTab = new QPushButton("+");
 
     addressBar = new QLineEdit();
-    addressBar->setPlaceholderText("Enter a website address...");
+    addressBar->setPlaceholderText("Enter website address...");
 
-    navigation->addWidget(backButton);
-    navigation->addWidget(forwardButton);
-    navigation->addWidget(refreshButton);
-    navigation->addWidget(homeButton);
+    navigation->addWidget(back);
+    navigation->addWidget(forward);
+    navigation->addWidget(refresh);
+    navigation->addWidget(home);
     navigation->addWidget(addressBar);
-    navigation->addWidget(newTabButton);
+    navigation->addWidget(newTab);
 
-    // Browser tabs
     tabs = new QTabWidget();
     tabs->setTabsClosable(true);
     tabs->setMovable(true);
 
-    mainLayout->addLayout(navigation);
-    mainLayout->addWidget(tabs);
+    layout->addLayout(navigation);
+    layout->addWidget(tabs);
 
     setCentralWidget(central);
 
-    // Button connections
-    connect(backButton, &QPushButton::clicked,
-            this, &OrneredeBrowser::goBack);
+    QMenu *bookmarks = menuBar()->addMenu("Bookmarks");
+    bookmarksMenu = bookmarks;
 
-    connect(forwardButton, &QPushButton::clicked,
-            this, &OrneredeBrowser::goForward);
+    bookmarks->addAction("Add Bookmark", this,
+                         &OrneredeBrowser::addBookmark);
 
-    connect(refreshButton, &QPushButton::clicked,
-            this, &OrneredeBrowser::refreshPage);
+    bookmarks->addSeparator();
 
-    connect(homeButton, &QPushButton::clicked,
-            this, &OrneredeBrowser::goHome);
+    updateBookmarksMenu();
 
-    connect(newTabButton, &QPushButton::clicked,
+    connect(back, &QPushButton::clicked, this, [this]() {
+        auto *viewer = qobject_cast<QTextBrowser *>(tabs->currentWidget());
+        if (viewer) viewer->backward();
+    });
+
+    connect(forward, &QPushButton::clicked, this, [this]() {
+        auto *viewer = qobject_cast<QTextBrowser *>(tabs->currentWidget());
+        if (viewer) viewer->forward();
+    });
+
+    connect(refresh, &QPushButton::clicked,
+            this, &OrneredeBrowser::navigateToAddress);
+
+    connect(home, &QPushButton::clicked,
+            this, [this]() {
+        addNewTab();
+    });
+
+    connect(newTab, &QPushButton::clicked,
             this, &OrneredeBrowser::addNewTab);
 
     connect(addressBar, &QLineEdit::returnPressed,
             this, &OrneredeBrowser::navigateToAddress);
 
-    // Close tabs
     connect(tabs, &QTabWidget::tabCloseRequested,
             this, [this](int index) {
         if (tabs->count() > 1) {
+            QWidget *page = tabs->widget(index);
             tabs->removeTab(index);
+            page->deleteLater();
         }
     });
 
-    // Update address bar when changing tabs
     connect(tabs, &QTabWidget::currentChanged,
             this, [this](int index) {
+        if (index < 0) return;
 
-        if (index < 0)
-            return;
-
-        QTextBrowser *viewer =
+        auto *viewer =
             qobject_cast<QTextBrowser *>(tabs->widget(index));
 
-        if (viewer) {
+        if (viewer)
             addressBar->setText(
                 viewer->property("pageUrl").toString()
             );
-        }
     });
 
     addNewTab();
 }
 
 
-// Create a new tab
+// New tab page
 void OrneredeBrowser::addNewTab() {
 
-    QTextBrowser *viewer = new QTextBrowser();
+    auto *viewer = new QTextBrowser();
 
     viewer->setOpenLinks(false);
     viewer->setOpenExternalLinks(false);
 
-    viewer->setHtml(
-        "<h1>Ornerede Browser</h1>"
-        "<p>Welcome to Ornerede.</p>"
-        "<p>Enter a website address to begin.</p>"
-    );
+    QString html =
+        "<html><body style='text-align:center;"
+        "font-family:sans-serif;padding-top:60px;'>";
 
+    if (QFile::exists("Ornerede.png")) {
+        html +=
+            "<img src='Ornerede.png' width='180'><br>";
+    }
+
+    html +=
+        "<h1>Ornerede</h1>"
+        "<p>Enter a website address above to begin.</p>"
+        "</body></html>";
+
+    viewer->setHtml(html);
     viewer->setProperty("pageUrl", "");
 
-    // Handle clicked links
     connect(viewer, &QTextBrowser::anchorClicked,
             this, [this](const QUrl &url) {
         addressBar->setText(url.toString());
@@ -121,36 +147,26 @@ void OrneredeBrowser::addNewTab() {
     });
 
     int index = tabs->addTab(viewer, "New Tab");
-
     tabs->setCurrentIndex(index);
     addressBar->clear();
 }
 
 
-// Navigate to an address
+// Address navigation
 void OrneredeBrowser::navigateToAddress() {
 
     QString address = addressBar->text().trimmed();
 
-    if (address.isEmpty())
-        return;
+    if (address.isEmpty()) return;
 
-    if (!address.contains("://") &&
-        !address.contains(" ")) {
-
+    if (!address.contains("://"))
         address = "https://" + address;
-    }
 
     QUrl url(address);
 
     if (!url.isValid() || url.host().isEmpty()) {
-
-        QMessageBox::warning(
-            this,
-            "Invalid address",
-            "Please enter a valid website address."
-        );
-
+        QMessageBox::warning(this, "Ornerede",
+                             "Invalid website address.");
         return;
     }
 
@@ -158,28 +174,18 @@ void OrneredeBrowser::navigateToAddress() {
 }
 
 
-// Load a page through the local proxy
+// Fetch page through local proxy
 void OrneredeBrowser::loadPage(const QUrl &url) {
 
     QUrl proxyUrl("http://127.0.0.1:8080/fetch");
 
     QUrlQuery query;
-    query.addQueryItem(
-        "url",
-        url.toString(QUrl::FullyEncoded)
-    );
-
+    query.addQueryItem("url", url.toString());
     proxyUrl.setQuery(query);
 
     QNetworkRequest request(proxyUrl);
 
-    request.setHeader(
-        QNetworkRequest::UserAgentHeader,
-        "OrneredeBrowser/0.1"
-    );
-
-    QNetworkReply *reply =
-        networkManager->get(request);
+    QNetworkReply *reply = networkManager->get(request);
 
     connect(reply, &QNetworkReply::finished,
             this, [this, reply, url]() {
@@ -190,13 +196,13 @@ void OrneredeBrowser::loadPage(const QUrl &url) {
 }
 
 
-// Display returned webpage content
+// Display page
 void OrneredeBrowser::displayPage(
     QNetworkReply *reply,
-    const QUrl &originalUrl
+    const QUrl &url
 ) {
 
-    QTextBrowser *viewer =
+    auto *viewer =
         qobject_cast<QTextBrowser *>(tabs->currentWidget());
 
     if (!viewer) {
@@ -205,103 +211,106 @@ void OrneredeBrowser::displayPage(
     }
 
     if (reply->error() != QNetworkReply::NoError) {
-
         viewer->setPlainText(
-            "Unable to load this page.\n\n" +
+            "Unable to load page:\n" +
             reply->errorString()
         );
-
         reply->deleteLater();
         return;
     }
 
-    QByteArray content = reply->readAll();
+    QByteArray data = reply->readAll();
 
     QString contentType =
         reply->header(
             QNetworkRequest::ContentTypeHeader
         ).toString();
 
-    if (contentType.contains("text/html",
-                             Qt::CaseInsensitive)) {
-
-        viewer->setHtml(QString::fromUtf8(content));
-
-    } else if (contentType.contains("text/plain",
-                                    Qt::CaseInsensitive)) {
-
-        viewer->setPlainText(QString::fromUtf8(content));
-
+    if (contentType.contains("html", Qt::CaseInsensitive)) {
+        viewer->setHtml(QString::fromUtf8(data));
     } else {
-
-        viewer->setPlainText(
-            "This page returned a file type that "
-            "Ornerede cannot display yet.\n\n"
-            "Content type: " + contentType
-        );
+        viewer->setPlainText(QString::fromUtf8(data));
     }
 
-    viewer->setProperty(
-        "pageUrl",
-        originalUrl.toString()
-    );
+    viewer->setProperty("pageUrl", url.toString());
 
     tabs->setTabText(
         tabs->currentIndex(),
-        originalUrl.host()
+        url.host()
     );
 
-    addressBar->setText(originalUrl.toString());
+    addressBar->setText(url.toString());
 
     reply->deleteLater();
 }
 
 
-// Back navigation
-void OrneredeBrowser::goBack() {
+// Add bookmark
+void OrneredeBrowser::addBookmark() {
 
-    QTextBrowser *viewer =
-        qobject_cast<QTextBrowser *>(tabs->currentWidget());
+    QString url = addressBar->text().trimmed();
 
-    if (viewer)
-        viewer->backward();
+    if (url.isEmpty()) return;
+
+    QString name = QInputDialog::getText(
+        this,
+        "Add Bookmark",
+        "Bookmark name:",
+        QLineEdit::Normal,
+        QUrl(url).host()
+    );
+
+    if (name.trimmed().isEmpty()) return;
+
+    QSettings settings("Ornerede", "OrneredeBrowser");
+
+    int count = settings.beginReadArray("bookmarks");
+    settings.endArray();
+
+    settings.beginWriteArray("bookmarks", count + 1);
+    settings.setArrayIndex(count);
+    settings.setValue("name", name);
+    settings.setValue("url", url);
+    settings.endArray();
+
+    updateBookmarksMenu();
 }
 
 
-// Forward navigation
-void OrneredeBrowser::goForward() {
+// Rebuild bookmarks menu
+void OrneredeBrowser::updateBookmarksMenu() {
 
-    QTextBrowser *viewer =
-        qobject_cast<QTextBrowser *>(tabs->currentWidget());
+    QList<QAction *> actions = bookmarksMenu->actions();
 
-    if (viewer)
-        viewer->forward();
-}
-
-
-// Refresh current page
-void OrneredeBrowser::refreshPage() {
-
-    navigateToAddress();
-}
-
-
-// Home page
-void OrneredeBrowser::goHome() {
-
-    QTextBrowser *viewer =
-        qobject_cast<QTextBrowser *>(tabs->currentWidget());
-
-    if (viewer) {
-
-        viewer->setHtml(
-            "<h1>Ornerede Browser</h1>"
-            "<p>Welcome home.</p>"
-            "<p>Enter a website address to begin.</p>"
-        );
-
-        viewer->setProperty("pageUrl", "");
+    for (int i = 2; i < actions.size(); ++i) {
+        bookmarksMenu->removeAction(actions[i]);
+        delete actions[i];
     }
 
-    addressBar->clear();
+    QSettings settings("Ornerede", "OrneredeBrowser");
+
+    int count = settings.beginReadArray("bookmarks");
+
+    for (int i = 0; i < count; ++i) {
+        settings.setArrayIndex(i);
+
+        QString name = settings.value("name").toString();
+        QString url = settings.value("url").toString();
+
+        QAction *action = bookmarksMenu->addAction(name);
+
+        connect(action, &QAction::triggered,
+                this, [this, url]() {
+            openBookmark(url);
+        });
+    }
+
+    settings.endArray();
+}
+
+
+// Open bookmark
+void OrneredeBrowser::openBookmark(const QString &url) {
+    addressBar->setText(url);
+    navigateToAddress();
 }
