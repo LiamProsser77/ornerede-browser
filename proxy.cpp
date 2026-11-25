@@ -1,10 +1,10 @@
 #include "proxy.h"
 
+#include <QNetworkRequest>
 #include <QUrl>
 #include <QUrlQuery>
-#include <QNetworkRequest>
-#include <QHostAddress>
 #include <QPointer>
+#include <QHostAddress>
 
 ProxyServer::ProxyServer(QObject *parent)
     : QObject(parent) {
@@ -12,21 +12,12 @@ ProxyServer::ProxyServer(QObject *parent)
     server = new QTcpServer(this);
     networkManager = new QNetworkAccessManager(this);
 
-    connect(
-        server,
-        &QTcpServer::newConnection,
-        this,
-        &ProxyServer::handleConnection
-    );
+    connect(server, &QTcpServer::newConnection,
+            this, &ProxyServer::handleConnection);
 }
 
 bool ProxyServer::start(quint16 port) {
-
-    // Only accept connections from this computer.
-    return server->listen(
-        QHostAddress::LocalHost,
-        port
-    );
+    return server->listen(QHostAddress::LocalHost, port);
 }
 
 void ProxyServer::stop() {
@@ -37,29 +28,15 @@ void ProxyServer::handleConnection() {
 
     while (server->hasPendingConnections()) {
 
-        QTcpSocket *socket =
-            server->nextPendingConnection();
+        QTcpSocket *socket = server->nextPendingConnection();
 
-        buffers.insert(socket, QByteArray());
+        connect(socket, &QTcpSocket::readyRead,
+                this, [this, socket]() {
+            handleRequest(socket);
+        });
 
-        connect(
-            socket,
-            &QTcpSocket::readyRead,
-            this,
-            [this, socket]() {
-                handleRequest(socket);
-            }
-        );
-
-        connect(
-            socket,
-            &QTcpSocket::disconnected,
-            this,
-            [this, socket]() {
-                buffers.remove(socket);
-                socket->deleteLater();
-            }
-        );
+        connect(socket, &QTcpSocket::disconnected,
+                socket, &QObject::deleteLater);
     }
 }
 
@@ -68,11 +45,6 @@ void ProxyServer::sendError(
     int status,
     const QByteArray &reason
 ) {
-
-    if (socket->state() !=
-        QAbstractSocket::ConnectedState) {
-        return;
-    }
 
     QByteArray body = reason + "\n";
 
@@ -91,27 +63,15 @@ void ProxyServer::sendError(
 
 void ProxyServer::handleRequest(QTcpSocket *socket) {
 
-    if (!buffers.contains(socket))
-        return;
+    QByteArray data = socket->readAll();
 
-    QByteArray &buffer = buffers[socket];
-
-    buffer += socket->readAll();
-
-    // Limit request headers.
-    if (buffer.size() > 16384) {
-        sendError(socket, 413, "Request Too Large");
-        return;
-    }
-
-    // Wait until the complete HTTP headers arrive.
-    int headerEnd = buffer.indexOf("\r\n\r\n");
+    int headerEnd = data.indexOf("\r\n\r\n");
 
     if (headerEnd < 0)
         return;
 
     QList<QByteArray> lines =
-        buffer.left(headerEnd).split('\n');
+        data.left(headerEnd).split('\n');
 
     if (lines.isEmpty()) {
         sendError(socket, 400, "Bad Request");
@@ -121,20 +81,12 @@ void ProxyServer::handleRequest(QTcpSocket *socket) {
     QList<QByteArray> requestLine =
         lines.first().trimmed().split(' ');
 
-    if (requestLine.size() < 3 ||
-        requestLine[0] != "GET" ||
-        !requestLine[1].startsWith("/fetch?")) {
-
-        sendError(
-            socket,
-            405,
-            "Only GET /fetch is supported"
-        );
-
+    if (requestLine.size() < 2 ||
+        requestLine[0] != "GET") {
+        sendError(socket, 405, "Method Not Allowed");
         return;
     }
 
-    // Read the target URL from the local fetch request.
     QUrl localUrl(
         "http://127.0.0.1" +
         QString::fromUtf8(requestLine[1])
@@ -143,29 +95,19 @@ void ProxyServer::handleRequest(QTcpSocket *socket) {
     QUrlQuery query(localUrl);
 
     QUrl target(
-        query.queryItemValue(
-            "url",
-            QUrl::FullyDecoded
-        )
+        query.queryItemValue("url", QUrl::FullyDecoded)
     );
 
-    // Validate the target.
     if (!target.isValid() ||
         target.host().isEmpty() ||
         (target.scheme() != "http" &&
          target.scheme() != "https") ||
         !target.userInfo().isEmpty()) {
 
-        sendError(
-            socket,
-            400,
-            "Invalid Target URL"
-        );
-
+        sendError(socket, 400, "Invalid URL");
         return;
     }
 
-    // Basic local-address protection.
     QString host = target.host().toLower();
 
     if (host == "localhost" ||
@@ -174,21 +116,15 @@ void ProxyServer::handleRequest(QTcpSocket *socket) {
         host == "::1" ||
         host == "0.0.0.0") {
 
-        sendError(
-            socket,
-            403,
-            "Local Destinations Blocked"
-        );
-
+        sendError(socket, 403, "Local address blocked");
         return;
     }
 
-    // Fetch the requested website.
     QNetworkRequest request(target);
 
     request.setHeader(
         QNetworkRequest::UserAgentHeader,
-        "OrneredeBrowser/0.1"
+        "Ornerede/0.0.1"
     );
 
     request.setAttribute(
@@ -196,75 +132,54 @@ void ProxyServer::handleRequest(QTcpSocket *socket) {
         QNetworkRequest::NoLessSafeRedirectPolicy
     );
 
-    QNetworkReply *reply =
-        networkManager->get(request);
+    QNetworkReply *reply = networkManager->get(request);
 
-    QPointer<QTcpSocket> guardedSocket(socket);
+    QPointer<QTcpSocket> safeSocket(socket);
 
-    connect(
-        reply,
-        &QNetworkReply::finished,
-        this,
-        [guardedSocket, reply]() {
+    connect(reply, &QNetworkReply::finished,
+            this, [safeSocket, reply]() {
 
-            if (!guardedSocket ||
-                guardedSocket->state() !=
-                QAbstractSocket::ConnectedState) {
-
-                reply->deleteLater();
-                return;
-            }
-
-            QByteArray body = reply->readAll();
-
-            int status =
-                reply->attribute(
-                    QNetworkRequest::HttpStatusCodeAttribute
-                ).toInt();
-
-            QByteArray contentType =
-                reply->header(
-                    QNetworkRequest::ContentTypeHeader
-                ).toByteArray();
-
-            if (contentType.isEmpty()) {
-                contentType =
-                    "application/octet-stream";
-            }
-
-            if (status == 0)
-                status = 502;
-
-            QByteArray reason = "Upstream Response";
-
-            if (status == 200)
-                reason = "OK";
-            else if (status == 301)
-                reason = "Moved Permanently";
-            else if (status == 302)
-                reason = "Found";
-            else if (status == 403)
-                reason = "Forbidden";
-            else if (status == 404)
-                reason = "Not Found";
-            else if (status >= 500)
-                reason = "Upstream Error";
-
-            QByteArray response =
-                "HTTP/1.1 " +
-                QByteArray::number(status) +
-                " " + reason + "\r\n"
-                "Content-Type: " + contentType + "\r\n"
-                "X-Content-Type-Options: nosniff\r\n"
-                "Connection: close\r\n"
-                "Content-Length: " +
-                QByteArray::number(body.size()) +
-                "\r\n\r\n" + body;
-
-            guardedSocket->write(response);
-            guardedSocket->disconnectFromHost();
+        if (!safeSocket ||
+            safeSocket->state() !=
+            QAbstractSocket::ConnectedState) {
 
             reply->deleteLater();
+            return;
         }
-    );
+
+        QByteArray body = reply->readAll();
+
+        int status = reply->attribute(
+            QNetworkRequest::HttpStatusCodeAttribute
+        ).toInt();
+
+        if (status == 0)
+            status = 502;
+
+        QByteArray contentType = reply->header(
+            QNetworkRequest::ContentTypeHeader
+        ).toByteArray();
+
+        if (contentType.isEmpty())
+            contentType = "application/octet-stream";
+
+        QByteArray reason = "OK";
+
+        if (status >= 400)
+            reason = "Upstream Error";
+
+        QByteArray response =
+            "HTTP/1.1 " + QByteArray::number(status) +
+            " " + reason + "\r\n"
+            "Content-Type: " + contentType + "\r\n"
+            "Connection: close\r\n"
+            "Content-Length: " +
+            QByteArray::number(body.size()) +
+            "\r\n\r\n" + body;
+
+        safeSocket->write(response);
+        safeSocket->disconnectFromHost();
+
+        reply->deleteLater();
+    });
 }
