@@ -34,7 +34,7 @@ Ornerede is an open-source web browser that's private and built with C++.
 
 ## ChromeOS
 
-[Open Ornerede for ChromeOS](https://liamprosser77.github.io/ornerede-web/)
+[Open Ornerede for ChromeOS]()
 
 **Note: Ornerede is at it's first release right now each webpage does not show Javascript yet, only HTML.**
 
