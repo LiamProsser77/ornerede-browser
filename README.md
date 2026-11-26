@@ -45,6 +45,7 @@ Ornerede is an open-source web browser that's private and built with C++.
 ## Engine
 Ornerede runs on it's own engine called QuillRE (Quill Rendering Engine).
 
+<img width="120" height="120" alt="img-u7531553446422797335-1-get-rid-of-watermarks-on-this-and-make-it-a-bit-di-make-the-logo-a-bit-di" src="https://github.com/user-attachments/assets/ba0930ef-bb4e-4c17-bc22-2addb7e9aa2e" />
 
 ## License
 
