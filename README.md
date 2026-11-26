@@ -1,8 +1,4 @@
-<img width="144" height="150" align="left" alt="logo_clean_transparent" src="https://github.com/user-attachments/assets/4d5ad552-040b-4198-803c-5beca7e7d130" />
-<br><br><br><br><br>
-<sub>Logo hand drawn by Liam Prosser</sub>
-
-<br clear="left" />
+<img width="244" height="250" alt="ornerede-logo" src="https://github.com/user-attachments/assets/bb532641-7677-42e7-80f9-46c4f8f388da" />
 
 # Ornerede Browser
 
@@ -50,3 +46,7 @@ Ornerede runs on it's own engine called QuillRE (Quill Rendering Engine).
 ## License
 
 MIT License
+
+<br>
+
+<sub>Logo hand drawn by Liam Prosser</sub>
