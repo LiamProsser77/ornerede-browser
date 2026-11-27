@@ -2,11 +2,11 @@
 
 # Ornerede Browser
 
-Ornerede is an open-source web browser that's private and built with C++.
+Ornerede is an open-source web browser that's private and built with REBOL.
 
 ## Features
 
-- C++ application
+- REBOL application
 - Cross-platform goals
 - Cannot Render Javascript on pages
 
